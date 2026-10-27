@@ -1,0 +1,66 @@
+{% extends 'dashboard/base_admin.html' %}
+{% load static %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="text-white fw-bold mb-1">Student Contact Attempts Log</h2>
+        <p class="text-secondary small mb-0">Record of administrative communications conducted to verify item details.</p>
+    </div>
+</div>
+
+<div class="saas-card">
+    <div class="saas-card-body p-0">
+        {% if page_obj %}
+            <div class="table-responsive">
+                <table class="saas-table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Admin Officer</th>
+                            <th>Student Contacted</th>
+                            <th>Method</th>
+                            <th>Details Used</th>
+                            <th>Outcome</th>
+                            <th>Response</th>
+                            <th>Verification Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in page_obj %}
+                            <tr>
+                                <td class="text-secondary small">{{ log.created_at|date:"M d, Y H:i" }}</td>
+                                <td class="text-white small fw-semibold">{{ log.admin.username }}</td>
+                                <td>
+                                    <div class="text-white small">{{ log.contact_target.username }}</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">{{ log.contact_target.student_id|default:log.contact_target.email }}</div>
+                                </td>
+                                <td><span class="badge bg-secondary">{{ log.get_contact_method_display }}</span></td>
+                                <td class="font-monospace text-secondary small">{{ log.contact_details_used }}</td>
+                                <td>
+                                    <span class="badge {% if log.outcome == 'CONFIRMED_CONSISTENT' %}bg-success{% elif log.outcome == 'INCONSISTENT' %}bg-danger{% elif log.outcome == 'UNREACHABLE' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}" style="font-size: 0.7rem;">
+                                        {{ log.get_outcome_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if log.response_received %}
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    {% else %}
+                                        <i class="bi bi-x-circle text-muted"></i>
+                                    {% endif %}
+                                </td>
+                                <td class="text-secondary small" style="max-width: 250px;">{{ log.notes }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5 text-secondary">
+                <i class="bi bi-telephone fs-1 text-muted d-block mb-2"></i>
+                No contact attempts logged yet.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

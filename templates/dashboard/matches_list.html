@@ -1,0 +1,195 @@
+{% extends 'dashboard/base_admin.html' %}
+{% load static %}
+
+{% block admin_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h2 class="text-white fw-bold mb-1">AI Match Review Console</h2>
+        <p class="text-secondary small mb-0">
+            Side-by-side comparative inspection of AI-correlated Lost & Found report pairs.
+        </p>
+    </div>
+    <span class="badge bg-secondary px-3 py-2 fs-7">{{ total_count }} Potential Matches</span>
+</div>
+
+<!-- Filters Toolbar -->
+<div class="saas-card p-3 mb-4">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-4">
+            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="ALL" {% if status_filter == 'ALL' %}selected{% endif %}>All Match Statuses</option>
+                <option value="PENDING_REVIEW" {% if status_filter == 'PENDING_REVIEW' %}selected{% endif %}>Pending Admin Review</option>
+                <option value="UNDER_REVIEW" {% if status_filter == 'UNDER_REVIEW' %}selected{% endif %}>Under Investigation</option>
+                <option value="VERIFIED_MATCH" {% if status_filter == 'VERIFIED_MATCH' %}selected{% endif %}>Verified Compatible Match</option>
+                <option value="DISMISSED" {% if status_filter == 'DISMISSED' %}selected{% endif %}>Dismissed / Incompatible</option>
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <input type="number" step="5" min="0" max="100" name="min_score" value="{{ min_score }}" class="form-control form-control-sm" placeholder="Minimum similarity score (e.g. 60)">
+        </div>
+
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-filter me-1"></i> Filter</button>
+        </div>
+
+        <div class="col-md-2 text-end">
+            <a href="{% url 'dashboard:matches_list' %}" class="btn btn-secondary btn-sm w-100">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Side-by-Side Match Cards -->
+{% if page_obj %}
+    {% for match in page_obj %}
+        <div class="saas-card mb-4 border {% if match.similarity_score >= 70 %}border-success{% elif match.similarity_score >= 50 %}border-info{% else %}border-secondary{% endif %}">
+            <!-- Match Header Banner -->
+            <div class="saas-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="similarity-pill {% if match.similarity_score >= 70 %}score-high{% elif match.similarity_score >= 50 %}score-medium{% else %}score-low{% endif %} fs-6 py-2 px-3">
+                        <i class="bi bi-stars me-1"></i> {{ match.similarity_score }}% Similarity Score
+                    </span>
+                    <span class="badge bg-secondary">Status: {{ match.get_status_display }}</span>
+                    <span class="text-muted small">Generated {{ match.created_at|date:"M d, Y" }}</span>
+                </div>
+
+                <!-- Update Status Form -->
+                <form method="post" action="{% url 'dashboard:update_match_status' match.id %}" class="d-flex align-items-center gap-2">
+                    {% csrf_token %}
+                    <select name="status" class="form-select form-select-sm" style="width: auto;">
+                        <option value="PENDING_REVIEW" {% if match.status == 'PENDING_REVIEW' %}selected{% endif %}>Pending Review</option>
+                        <option value="UNDER_REVIEW" {% if match.status == 'UNDER_REVIEW' %}selected{% endif %}>Under Review</option>
+                        <option value="VERIFIED_MATCH" {% if match.status == 'VERIFIED_MATCH' %}selected{% endif %}>Verified Compatible</option>
+                        <option value="DISMISSED" {% if match.status == 'DISMISSED' %}selected{% endif %}>Dismiss</option>
+                    </select>
+                    <button type="submit" class="btn btn-secondary btn-sm">Update</button>
+                </form>
+            </div>
+
+            <!-- Side-by-Side Comparison Grid -->
+            <div class="saas-card-body p-4">
+                <div class="row g-4">
+                    <!-- Column 1: LOST REPORT -->
+                    <div class="col-lg-6 border-end-lg border-secondary pe-lg-4">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="badge badge-status badge-type-lost">LOST ITEM REPORT</span>
+                            <a href="{% url 'dashboard:report_inspect' match.lost_report.report_id %}" class="font-monospace text-primary fw-semibold small">
+                                {{ match.lost_report.report_id }} <i class="bi bi-box-arrow-up-right ms-1"></i>
+                            </a>
+                        </div>
+
+                        <h5 class="text-white fw-bold mb-1">{{ match.lost_report.title }}</h5>
+                        <div class="text-secondary small mb-3">
+                            <i class="bi bi-tag text-info me-1"></i> {{ match.lost_report.category.name }} ({{ match.lost_report.subcategory|default:"Generic" }})
+                        </div>
+
+                        <div class="d-flex gap-3 mb-3">
+                            {% if match.lost_report.primary_image %}
+                                <div class="rounded overflow-hidden bg-dark border border-secondary" style="width: 100px; height: 100px; flex-shrink: 0;">
+                                    <img src="{{ match.lost_report.primary_image.image.url }}" alt="Lost" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                            {% endif %}
+                            <div class="text-secondary small">
+                                <p class="mb-0" style="white-space: pre-line;">{{ match.lost_report.description }}</p>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-3 bg-dark border border-secondary small mb-3">
+                            <div class="mb-1"><strong>Lost Location:</strong> {{ match.lost_report.location_name }}</div>
+                            <div class="mb-1"><strong>Lost Date:</strong> {{ match.lost_report.date_occurred|date:"M d, Y" }}</div>
+                            <div><strong>Reporter:</strong> {{ match.lost_report.reporter.username }} ({{ match.lost_report.contact_phone|default:match.lost_report.contact_email }})</div>
+                        </div>
+
+                        {% if match.lost_report.distinctive_marks %}
+                            <div class="p-2 rounded bg-warning bg-opacity-10 border border-warning text-warning small">
+                                <strong>Private Marks:</strong> {{ match.lost_report.distinctive_marks }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Column 2: FOUND REPORT -->
+                    <div class="col-lg-6 ps-lg-4">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="badge badge-status badge-type-found">FOUND ITEM REPORT</span>
+                            <a href="{% url 'dashboard:report_inspect' match.found_report.report_id %}" class="font-monospace text-success fw-semibold small">
+                                {{ match.found_report.report_id }} <i class="bi bi-box-arrow-up-right ms-1"></i>
+                            </a>
+                        </div>
+
+                        <h5 class="text-white fw-bold mb-1">{{ match.found_report.title }}</h5>
+                        <div class="text-secondary small mb-3">
+                            <i class="bi bi-tag text-info me-1"></i> {{ match.found_report.category.name }} ({{ match.found_report.subcategory|default:"Generic" }})
+                        </div>
+
+                        <div class="d-flex gap-3 mb-3">
+                            {% if match.found_report.primary_image %}
+                                <div class="rounded overflow-hidden bg-dark border border-secondary" style="width: 100px; height: 100px; flex-shrink: 0;">
+                                    <img src="{{ match.found_report.primary_image.image.url }}" alt="Found" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                            {% endif %}
+                            <div class="text-secondary small">
+                                <p class="mb-0" style="white-space: pre-line;">{{ match.found_report.description }}</p>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-3 bg-dark border border-secondary small mb-3">
+                            <div class="mb-1"><strong>Found Location:</strong> {{ match.found_report.location_name }}</div>
+                            <div class="mb-1"><strong>Found Date:</strong> {{ match.found_report.date_occurred|date:"M d, Y" }}</div>
+                            <div><strong>Finder:</strong> {{ match.found_report.reporter.username }} ({{ match.found_report.contact_phone|default:match.found_report.contact_email }})</div>
+                        </div>
+
+                        {% if match.found_report.distinctive_marks %}
+                            <div class="p-2 rounded bg-warning bg-opacity-10 border border-warning text-warning small">
+                                <strong>Private Marks:</strong> {{ match.found_report.distinctive_marks }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- AI Evaluation Breakdown & Explanations -->
+                <div class="mt-4 pt-3 border-top border-secondary">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-7">
+                            <div class="text-white fw-semibold small mb-1"><i class="bi bi-robot text-info me-1"></i> AI Component Subscores</div>
+                            <div class="d-flex flex-wrap gap-3 small text-secondary">
+                                <span>Text (45%): <strong class="text-white">{{ match.text_similarity }}%</strong></span>
+                                <span>Category (20%): <strong class="text-white">{{ match.category_similarity }}%</strong></span>
+                                <span>Attributes (15%): <strong class="text-white">{{ match.attribute_similarity }}%</strong></span>
+                                <span>Location (10%): <strong class="text-white">{{ match.location_similarity }}%</strong></span>
+                                <span>Date (10%): <strong class="text-white">{{ match.date_similarity }}%</strong></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-5">
+                            <div class="text-white fw-semibold small mb-1">Reasoning Analysis</div>
+                            <ul class="mb-0 ps-3 text-secondary" style="font-size: 0.775rem;">
+                                {% for r in match.matching_reasons %}
+                                    <li>{{ r }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+        <ul class="pagination pagination-sm justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link bg-dark border-secondary text-white" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Prev</a></li>
+            {% endif %}
+            <li class="page-item disabled"><span class="page-link bg-dark border-secondary text-secondary">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link bg-dark border-secondary text-white" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">Next</a></li>
+            {% endif %}
+        </ul>
+    {% endif %}
+{% else %}
+    <div class="saas-card text-center py-5 text-secondary">
+        <i class="bi bi-cpu fs-1 text-muted d-block mb-2"></i>
+        No AI match pairs meeting current filter criteria.
+    </div>
+{% endif %}
+{% endblock %}

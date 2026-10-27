@@ -1,0 +1,299 @@
+{% extends 'dashboard/base_admin.html' %}
+{% load static %}
+
+{% block admin_content %}
+<!-- Breadcrumb and Quick Nav -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb small mb-0">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:overview' %}" class="text-secondary">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:approvals' %}" class="text-secondary">Approval Queue</a></li>
+            <li class="breadcrumb-item active text-white" aria-current="page">{{ report.report_id }}</li>
+        </ol>
+    </nav>
+    <a href="{% url 'dashboard:approvals' %}" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Queue
+    </a>
+</div>
+
+<!-- Report Summary Header -->
+<div class="saas-card p-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge badge-status {% if report.report_type == 'LOST' %}badge-type-lost{% else %}badge-type-found{% endif %}">
+                    {{ report.get_report_type_display }}
+                </span>
+                <span class="badge badge-status {% if report.approval_status == 'APPROVED' %}badge-approved{% elif report.approval_status == 'PENDING' %}badge-pending{% elif report.approval_status == 'NEEDS_INFORMATION' %}badge-needs-info{% elif report.approval_status == 'REJECTED' %}badge-rejected{% else %}badge-archived{% endif %}">
+                    {{ report.get_approval_status_display }}
+                </span>
+                <span class="font-monospace text-primary fw-bold">ID: {{ report.report_id }}</span>
+            </div>
+            <h2 class="text-white fw-bold mb-1">{{ report.title }}</h2>
+            <div class="text-secondary small">
+                <span class="me-3"><i class="bi bi-tag text-info me-1"></i> {{ report.category.name }} ({{ report.subcategory|default:"Generic" }})</span>
+                <span class="me-3"><i class="bi bi-geo-alt text-primary me-1"></i> {{ report.location_name }}</span>
+                <span><i class="bi bi-calendar3 text-warning me-1"></i> {{ report.date_occurred|date:"M d, Y" }}</span>
+            </div>
+        </div>
+
+        <form method="post" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="trigger_ai">
+            <button type="submit" class="btn btn-outline-info btn-sm fw-semibold">
+                <i class="bi bi-cpu me-1"></i> Re-run AI Matching
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Details, Photos, Evidence -->
+    <div class="col-lg-7">
+        <!-- Photographs -->
+        <div class="saas-card p-4 mb-4">
+            <h5 class="text-white fw-bold mb-3"><i class="bi bi-camera me-2 text-primary"></i> Uploaded Photos</h5>
+            {% if report.images.all %}
+                <div class="row g-3">
+                    {% for img in report.images.all %}
+                        <div class="col-6">
+                            <div class="rounded-3 overflow-hidden border border-secondary" style="height: 200px; background-color: #0F172A;">
+                                <img src="{{ img.image.url }}" alt="Item photo" style="width: 100%; height: 100%; object-fit: contain;">
+                            </div>
+                            {% if img.is_primary %}
+                                <div class="badge bg-primary mt-1">Primary View</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-3 text-muted small">No photos attached to this report.</div>
+            {% endif %}
+        </div>
+
+        <!-- Description & Locations -->
+        <div class="saas-card p-4 mb-4">
+            <h5 class="text-white fw-bold mb-3"><i class="bi bi-card-text me-2 text-info"></i> Item Description</h5>
+            <p class="text-secondary mb-3" style="white-space: pre-line;">{{ report.description }}</p>
+
+            <div class="p-3 rounded-3 bg-dark border border-secondary mb-3 small">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="text-muted">Campus Area</div>
+                        <div class="text-white fw-semibold">{{ report.location_name }}</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-muted">Specific Details</div>
+                        <div class="text-white">{{ report.location_details|default:"None provided" }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confidential Distinctive Marks -->
+            <div class="p-3 rounded-3 bg-warning bg-opacity-10 border border-warning text-warning-emphasis">
+                <div class="fw-bold text-warning mb-1">
+                    <i class="bi bi-lock-fill me-1"></i> Confidential Distinctive Marks & Serial Numbers:
+                </div>
+                <div class="text-white small" style="white-space: pre-line;">
+                    {{ report.distinctive_marks|default:"No confidential markings specified by reporter." }}
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Match Recommendations -->
+        <div class="saas-card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="text-white fw-bold mb-0">
+                    <i class="bi bi-cpu text-info me-2"></i> AI-Discovered Compatible Matches
+                </h5>
+                <span class="badge bg-secondary">{{ matches.count }} Found</span>
+            </div>
+
+            {% if matches %}
+                <div class="list-group list-group-flush">
+                    {% for m in matches %}
+                        {% with comp=m.found_report|default:m.lost_report %}
+                            <div class="p-3 mb-3 rounded-3 bg-dark border border-secondary">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <div class="text-white fw-bold">
+                                            {% if report.report_type == 'LOST' %}{{ m.found_report.title }}{% else %}{{ m.lost_report.title }}{% endif %}
+                                        </div>
+                                        <div class="font-monospace text-muted small">
+                                            {% if report.report_type == 'LOST' %}{{ m.found_report.report_id }}{% else %}{{ m.lost_report.report_id }}{% endif %}
+                                        </div>
+                                    </div>
+                                    <span class="similarity-pill {% if m.similarity_score >= 70 %}score-high{% elif m.similarity_score >= 50 %}score-medium{% else %}score-low{% endif %}">
+                                        {{ m.similarity_score }}% Similarity
+                                    </span>
+                                </div>
+
+                                <!-- Subscores Meter Breakdown -->
+                                <div class="row g-2 text-center small text-secondary mb-2" style="font-size: 0.75rem;">
+                                    <div class="col">Text: <strong class="text-white">{{ m.text_similarity }}%</strong></div>
+                                    <div class="col">Category: <strong class="text-white">{{ m.category_similarity }}%</strong></div>
+                                    <div class="col">Attributes: <strong class="text-white">{{ m.attribute_similarity }}%</strong></div>
+                                    <div class="col">Location: <strong class="text-white">{{ m.location_similarity }}%</strong></div>
+                                    <div class="col">Timeline: <strong class="text-white">{{ m.date_similarity }}%</strong></div>
+                                </div>
+
+                                {% if m.matching_reasons %}
+                                    <div class="small text-secondary mb-2">
+                                        <strong>Matching Factors:</strong>
+                                        <ul class="mb-0 ps-3 mt-1" style="font-size: 0.75rem;">
+                                            {% for r in m.matching_reasons %}
+                                                <li>{{ r }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endif %}
+
+                                <div class="d-flex justify-content-between align-items-center pt-2 border-top border-secondary mt-2">
+                                    <span class="badge bg-secondary" style="font-size: 0.7rem;">Status: {{ m.get_status_display }}</span>
+                                    <a href="{% url 'dashboard:matches_list' %}" class="btn btn-outline-info btn-sm py-1 px-2" style="font-size: 0.75rem;">
+                                        Side-by-side Inspection <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endwith %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-3 text-muted small">
+                    No compatible counter-reports met the similarity threshold (50%).
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Column: Verification Actions, Contact Logger, History -->
+    <div class="col-lg-5">
+        <!-- Reporter Verified Contact Details (Authorized View) -->
+        <div class="saas-card p-4 mb-4">
+            <h5 class="text-white fw-bold mb-3"><i class="bi bi-person-check text-success me-2"></i> Reporter Profile</h5>
+            <div class="p-3 rounded-3 bg-dark border border-secondary mb-3 small">
+                <div class="mb-2">
+                    <span class="text-muted">Full Name:</span>
+                    <strong class="text-white ms-1">{{ report.reporter.get_full_name|default:report.reporter.username }}</strong>
+                </div>
+                <div class="mb-2">
+                    <span class="text-muted">Campus ID:</span>
+                    <span class="text-white ms-1">{{ report.reporter.student_id|default:"Not verified" }}</span>
+                </div>
+                <div class="mb-2">
+                    <span class="text-muted">Department:</span>
+                    <span class="text-white ms-1">{{ report.reporter.department|default:"N/A" }}</span>
+                </div>
+                <div class="mb-2">
+                    <span class="text-muted">Telephone:</span>
+                    <a href="tel:{{ report.contact_phone }}" class="text-info fw-semibold ms-1">{{ report.contact_phone|default:"N/A" }}</a>
+                </div>
+                <div>
+                    <span class="text-muted">Email:</span>
+                    <a href="mailto:{{ report.contact_email }}" class="text-info ms-1">{{ report.contact_email|default:report.reporter.email }}</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approval / Rejection Action Form -->
+        <div class="saas-card p-4 mb-4 border border-primary">
+            <h5 class="text-white fw-bold mb-3"><i class="bi bi-sliders text-primary me-2"></i> Administrative Decision</h5>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="review_decision">
+
+                <div class="mb-3">
+                    <label class="form-label" for="{{ review_form.action.id_for_label }}">Action Decision *</label>
+                    {{ review_form.action }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="{{ review_form.reason.id_for_label }}">Reason / Questions for Reporter</label>
+                    {{ review_form.reason }}
+                    <div class="text-muted small mt-1">This message is sent directly to the student's notification center.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="{{ review_form.admin_notes.id_for_label }}">Internal Staff Notes</label>
+                    {{ review_form.admin_notes }}
+                    <div class="text-muted small mt-1">Kept confidential from student.</div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 fw-semibold">
+                    <i class="bi bi-check-circle me-1"></i> Commit Decision
+                </button>
+            </form>
+        </div>
+
+        <!-- Contact Attempt Logger -->
+        <div class="saas-card p-4 mb-4">
+            <h5 class="text-white fw-bold mb-3"><i class="bi bi-telephone-plus text-warning me-2"></i> Record Student Contact Attempt</h5>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="log_contact">
+
+                <div class="mb-2">
+                    <label class="form-label small" for="{{ contact_form.contact_method.id_for_label }}">Contact Method</label>
+                    {{ contact_form.contact_method }}
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label small" for="{{ contact_form.contact_details_used.id_for_label }}">Phone / Email Used</label>
+                    {{ contact_form.contact_details_used }}
+                </div>
+
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label small" for="{{ contact_form.outcome.id_for_label }}">Outcome</label>
+                        {{ contact_form.outcome }}
+                    </div>
+                    <div class="col-6 d-flex align-items-end">
+                        <div class="form-check pb-2">
+                            {{ contact_form.response_received }}
+                            <label class="form-check-label text-secondary small" for="{{ contact_form.response_received.id_for_label }}">Response Received</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label small" for="{{ contact_form.notes.id_for_label }}">Verification Notes</label>
+                    {{ contact_form.notes }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small" for="{{ contact_form.follow_up_date.id_for_label }}">Follow-up Date (Optional)</label>
+                    {{ contact_form.follow_up_date }}
+                </div>
+
+                <!-- Hidden Target Field -->
+                <input type="hidden" name="contact_target" value="{{ report.reporter.id }}">
+
+                <button type="submit" class="btn btn-secondary btn-sm w-100">
+                    <i class="bi bi-save me-1"></i> Save Contact Attempt Log
+                </button>
+            </form>
+        </div>
+
+        <!-- Contact Log History -->
+        <div class="saas-card p-4">
+            <h6 class="text-white fw-bold mb-3"><i class="bi bi-journal-text me-2 text-secondary"></i> Verification History</h6>
+            {% if contact_logs %}
+                <div class="list-group list-group-flush">
+                    {% for cl in contact_logs %}
+                        <div class="list-group-item bg-transparent border-secondary px-0 py-2 small">
+                            <div class="d-flex justify-content-between">
+                                <strong class="text-white">{{ cl.get_contact_method_display }} &bull; {{ cl.get_outcome_display }}</strong>
+                                <span class="text-muted">{{ cl.created_at|date:"M d, H:i" }}</span>
+                            </div>
+                            <div class="text-secondary mt-1">{{ cl.notes }}</div>
+                            <div class="text-muted" style="font-size: 0.7rem;">Admin: {{ cl.admin.username }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-2 text-muted small">No contact attempts logged yet.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

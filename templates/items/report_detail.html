@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}[{{ report.report_id }}] {{ report.title }} | Campus Recovery Portal{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{% url 'public_home' %}" class="text-secondary">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'items:public_list' %}" class="text-secondary">Items</a></li>
+            <li class="breadcrumb-item active text-white" aria-current="page">{{ report.report_id }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header Card -->
+    <div class="saas-card p-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge badge-status {% if report.report_type == 'LOST' %}badge-type-lost{% else %}badge-type-found{% endif %}">
+                        {{ report.get_report_type_display }}
+                    </span>
+                    <span class="badge badge-status {% if report.approval_status == 'APPROVED' %}badge-approved{% elif report.approval_status == 'PENDING' %}badge-pending{% elif report.approval_status == 'NEEDS_INFORMATION' %}badge-needs-info{% elif report.approval_status == 'REJECTED' %}badge-rejected{% else %}badge-archived{% endif %}">
+                        {{ report.get_approval_status_display }}
+                    </span>
+                    <span class="font-monospace text-secondary small">ID: {{ report.report_id }}</span>
+                </div>
+                <h2 class="text-white fw-bold mb-1">{{ report.title }}</h2>
+                <div class="text-secondary small">
+                    <span class="me-3"><i class="bi bi-tag text-info me-1"></i> {{ report.category.name }}{% if report.subcategory %} &bull; {{ report.subcategory }}{% endif %}</span>
+                    <span class="me-3"><i class="bi bi-geo-alt text-primary me-1"></i> {{ report.location_name }}</span>
+                    <span><i class="bi bi-calendar3 text-warning me-1"></i> {{ report.date_occurred|date:"M d, Y" }}</span>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="d-flex flex-wrap gap-2">
+                {% if is_staff %}
+                    <a href="{% url 'dashboard:report_inspect' report.report_id %}" class="btn btn-warning btn-sm fw-bold">
+                        <i class="bi bi-sliders me-1"></i> Admin Operations Review
+                    </a>
+                {% endif %}
+
+                {% if is_owner and report.approval_status == 'NEEDS_INFORMATION' %}
+                    <a href="{% url 'items:report_edit' report.report_id %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-pencil me-1"></i> Update Requested Details
+                    </a>
+                {% endif %}
+
+                {% if report.is_approved and report.report_type == 'FOUND' and not is_owner %}
+                    <a href="{% url 'claims:submit_claim' report.report_id %}" class="btn btn-success btn-sm fw-bold">
+                        <i class="bi bi-shield-check me-1"></i> Claim Ownership
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="row g-4">
+        <!-- Left: Details & Photos -->
+        <div class="col-lg-8">
+            <!-- Photographs Gallery -->
+            <div class="saas-card mb-4 p-4">
+                <h5 class="text-white fw-bold mb-3"><i class="bi bi-camera me-2 text-primary"></i> Uploaded Photographs</h5>
+                {% if report.images.all %}
+                    <div class="row g-3">
+                        {% for img in report.images.all %}
+                            <div class="col-md-6">
+                                <div class="rounded-3 overflow-hidden border border-secondary" style="height: 260px; background-color: #0F172A;">
+                                    <img src="{{ img.image.url }}" alt="Item Photo" style="width: 100%; height: 100%; object-fit: contain;">
+                                </div>
+                                {% if img.is_primary %}
+                                    <div class="badge bg-primary mt-1">Primary Photo</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-card-image fs-1 d-block mb-1"></i>
+                        No photographic evidence uploaded for this item.
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Item Description -->
+            <div class="saas-card mb-4 p-4">
+                <h5 class="text-white fw-bold mb-3"><i class="bi bi-card-text me-2 text-info"></i> Item Description</h5>
+                <p class="text-secondary mb-4" style="white-space: pre-line;">{{ report.description }}</p>
+
+                <div class="row g-3 border-top border-secondary pt-3">
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Campus Location</div>
+                        <div class="text-white fw-semibold">{{ report.location_name }}</div>
+                        {% if report.location_details %}
+                            <div class="text-secondary small">{{ report.location_details }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small">Date & Time Occurred</div>
+                        <div class="text-white fw-semibold">{{ report.date_occurred|date:"F d, Y" }}</div>
+                        {% if report.time_occurred %}
+                            <div class="text-secondary small">{{ report.time_occurred|time:"h:i A" }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confidential Distinctive Marks Section -->
+            <div class="saas-card mb-4 p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="text-white fw-bold mb-0">
+                        <i class="bi bi-lock text-warning me-2"></i> Confidential Distinctive Marks & Serials
+                    </h5>
+                    {% if can_view_sensitive %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-eye me-1"></i> Authorized View</span>
+                    {% else %}
+                        <span class="badge bg-secondary"><i class="bi bi-eye-slash me-1"></i> Obscured for Public</span>
+                    {% endif %}
+                </div>
+
+                {% if can_view_sensitive %}
+                    {% if report.distinctive_marks %}
+                        <div class="p-3 rounded-3 bg-warning bg-opacity-10 border border-warning text-warning-emphasis">
+                            <div class="small fw-bold text-warning mb-1">Confidential Verification Evidence:</div>
+                            <div class="text-white small" style="white-space: pre-line;">{{ report.distinctive_marks }}</div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted small mb-0">No private distinctive marks provided by reporter.</p>
+                    {% endif %}
+                {% else %}
+                    <div class="p-3 rounded-3 bg-dark border border-secondary text-secondary small">
+                        <i class="bi bi-shield-lock text-warning me-2"></i>
+                        Identifying serial numbers and confidential markings are concealed to protect legitimate ownership. Claimants must provide matching details during the ownership claim process.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right: Status Timeline & Reporter Metadata -->
+        <div class="col-lg-4">
+            <!-- Approval Workflow State Card -->
+            <div class="saas-card mb-4 p-4">
+                <h6 class="text-white fw-bold mb-3"><i class="bi bi-clock-history me-2 text-primary"></i> Verification Status</h6>
+                
+                <div class="mb-3">
+                    <div class="text-muted small">Current Workflow Status</div>
+                    <span class="badge badge-status {% if report.approval_status == 'APPROVED' %}badge-approved{% elif report.approval_status == 'PENDING' %}badge-pending{% elif report.approval_status == 'NEEDS_INFORMATION' %}badge-needs-info{% elif report.approval_status == 'REJECTED' %}badge-rejected{% else %}badge-archived{% endif %} mt-1">
+                        {{ report.get_approval_status_display }}
+                    </span>
+                </div>
+
+                {% if report.approval_status == 'NEEDS_INFORMATION' and report.rejection_reason %}
+                    <div class="p-3 rounded-3 bg-info bg-opacity-10 border border-info text-info small mb-3">
+                        <div class="fw-bold mb-1"><i class="bi bi-info-circle me-1"></i> Administrator Note:</div>
+                        {{ report.rejection_reason }}
+                    </div>
+                {% endif %}
+
+                {% if report.approval_status == 'REJECTED' and report.rejection_reason %}
+                    <div class="p-3 rounded-3 bg-danger bg-opacity-10 border border-danger text-danger small mb-3">
+                        <div class="fw-bold mb-1"><i class="bi bi-x-circle me-1"></i> Rejection Reason:</div>
+                        {{ report.rejection_reason }}
+                    </div>
+                {% endif %}
+
+                <div class="border-top border-secondary pt-3 text-secondary small">
+                    <div class="mb-1"><strong>Submitted:</strong> {{ report.created_at|date:"M d, Y h:i A" }}</div>
+                    {% if report.reviewed_at %}
+                        <div class="mb-1"><strong>Reviewed:</strong> {{ report.reviewed_at|date:"M d, Y h:i A" }}</div>
+                    {% endif %}
+                    <div><strong>Public Listing:</strong> {% if report.is_publicly_visible %}<span class="text-success">Visible</span>{% else %}<span class="text-muted">Hidden</span>{% endif %}</div>
+                </div>
+            </div>
+
+            <!-- Reporter Information (Private) -->
+            {% if can_view_sensitive %}
+                <div class="saas-card mb-4 p-4">
+                    <h6 class="text-white fw-bold mb-3"><i class="bi bi-person-lines-fill me-2 text-info"></i> Reporter Information</h6>
+                    <div class="mb-2">
+                        <div class="text-muted small">Name & Username</div>
+                        <div class="text-white fw-semibold">{{ report.reporter.get_full_name|default:report.reporter.username }}</div>
+                    </div>
+                    {% if report.reporter.student_id %}
+                        <div class="mb-2">
+                            <div class="text-muted small">Campus ID / Roll No</div>
+                            <div class="text-white">{{ report.reporter.student_id }}</div>
+                        </div>
+                    {% endif %}
+                    <div class="mb-2">
+                        <div class="text-muted small">Contact Phone</div>
+                        <div class="text-white">{{ report.contact_phone|default:"Not provided" }}</div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="text-muted small">Contact Email</div>
+                        <div class="text-white">{{ report.contact_email|default:report.reporter.email }}</div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- AI Matches Preview if Admin -->
+            {% if is_staff and admin_matches %}
+                <div class="saas-card p-4">
+                    <h6 class="text-white fw-bold mb-3"><i class="bi bi-stars text-info me-2"></i> AI Matches ({{ admin_matches.count }})</h6>
+                    {% for m in admin_matches|slice:":3" %}
+                        <div class="p-2 mb-2 rounded bg-dark border border-secondary small">
+                            <div class="d-flex justify-content-between">
+                                <span class="font-monospace text-info">{% if report.report_type == 'LOST' %}{{ m.found_report.report_id }}{% else %}{{ m.lost_report.report_id }}{% endif %}</span>
+                                <span class="similarity-pill {% if m.similarity_score >= 70 %}score-high{% elif m.similarity_score >= 50 %}score-medium{% else %}score-low{% endif %}">
+                                    {{ m.similarity_score }}%
+                                </span>
+                            </div>
+                            <div class="text-white fw-semibold mt-1">{% if report.report_type == 'LOST' %}{{ m.found_report.title }}{% else %}{{ m.lost_report.title }}{% endif %}</div>
+                        </div>
+                    {% endfor %}
+                    <a href="{% url 'dashboard:matches_list' %}" class="btn btn-outline-info btn-sm w-100 mt-2">Inspect All Matches</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

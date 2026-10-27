@@ -1,0 +1,140 @@
+{% extends 'dashboard/base_admin.html' %}
+{% load static %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb small mb-0">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:overview' %}" class="text-secondary">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:claims_list' %}" class="text-secondary">Claims</a></li>
+            <li class="breadcrumb-item active text-white" aria-current="page">{{ claim.claim_id }}</li>
+        </ol>
+    </nav>
+    <a href="{% url 'dashboard:claims_list' %}" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Claims Queue
+    </a>
+</div>
+
+<!-- Header -->
+<div class="saas-card p-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge badge-status {% if claim.status == 'VERIFIED' %}badge-approved{% elif claim.status == 'COMPLETED' %}badge-archived{% elif claim.status == 'PENDING_REVIEW' %}badge-pending{% elif claim.status == 'NEEDS_INFORMATION' %}badge-needs-info{% else %}badge-rejected{% endif %}">
+                    {{ claim.get_status_display }}
+                </span>
+                <span class="font-monospace text-info fw-bold">Claim ID: {{ claim.claim_id }}</span>
+            </div>
+            <h3 class="text-white fw-bold mb-1">Claim for {{ claim.item_report.title }}</h3>
+            <p class="text-secondary small mb-0">Submitted by <strong>{{ claim.claimant.get_full_name|default:claim.claimant.username }}</strong> on {{ claim.created_at|date:"M d, Y h:i A" }}</p>
+        </div>
+
+        <a href="{% url 'dashboard:report_inspect' claim.item_report.report_id %}" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Inspect Original Found Report
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Verification Evidence Comparison -->
+    <div class="col-lg-7">
+        <!-- Comparative Evidence Card -->
+        <div class="saas-card p-4 mb-4">
+            <h5 class="text-white fw-bold mb-3"><i class="bi bi-shield-shaded text-warning me-2"></i> Evidence vs Confidential Item Markings</h5>
+
+            <!-- 1. Claimant Evidence -->
+            <div class="p-3 rounded-3 bg-dark border border-secondary mb-3">
+                <div class="fw-bold text-info mb-1"><i class="bi bi-person-fill me-1"></i> Claimant's Submitted Evidence:</div>
+                <div class="text-white" style="white-space: pre-line;">{{ claim.evidence_description }}</div>
+            </div>
+
+            <!-- 2. Original Confidential Markings on Item -->
+            <div class="p-3 rounded-3 bg-warning bg-opacity-10 border border-warning mb-3">
+                <div class="fw-bold text-warning mb-1"><i class="bi bi-lock-fill me-1"></i> Confidential Markings Recorded When Item Turned In:</div>
+                <div class="text-white" style="white-space: pre-line;">{{ claim.item_report.distinctive_marks|default:"No distinctive marks were logged during submission." }}</div>
+            </div>
+
+            {% if claim.proof_file %}
+                <div class="p-3 rounded-3 bg-dark border border-secondary mb-3">
+                    <div class="text-muted small mb-2">Claimant Proof Document / Photo:</div>
+                    <a href="{{ claim.proof_file.url }}" target="_blank" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-file-earmark-arrow-down me-1"></i> Open Attached Proof Document
+                    </a>
+                </div>
+            {% endif %}
+
+            <div class="row g-2 text-secondary small border-top border-secondary pt-3">
+                <div class="col-6"><strong>Direct Phone:</strong> {{ claim.contact_phone }}</div>
+                <div class="col-6"><strong>Direct Email:</strong> {{ claim.contact_email }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Admin Actions & Recovery Finalization -->
+    <div class="col-lg-5">
+        <!-- Claim Status Update Form -->
+        <div class="saas-card p-4 mb-4 border border-info">
+            <h5 class="text-white fw-bold mb-3"><i class="bi bi-check2-circle text-info me-2"></i> Update Claim Status</h5>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="review_claim">
+
+                <div class="mb-3">
+                    <label class="form-label" for="{{ review_form.status.id_for_label }}">Decision Status</label>
+                    {{ review_form.status }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="{{ review_form.admin_notes.id_for_label }}">Verification Rationale & Notes</label>
+                    {{ review_form.admin_notes }}
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 fw-semibold">
+                    Update Claim Status
+                </button>
+            </form>
+        </div>
+
+        <!-- Recovery Finalization (Active when claim is verified or completing) -->
+        {% if claim.status == 'VERIFIED' or claim.status == 'COMPLETED' %}
+            <div class="saas-card p-4 border border-success">
+                <h5 class="text-white fw-bold mb-3"><i class="bi bi-award-fill text-success me-2"></i> Finalize Physical Recovery & Hand-off</h5>
+                <p class="text-secondary small mb-3">
+                    Confirm that identity was physically inspected at the security desk and the item was released. This creates an official immutable Recovery Record and archives the report.
+                </p>
+
+                {% if claim.status != 'COMPLETED' %}
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="finalize_recovery">
+
+                        <div class="mb-3">
+                            <label class="form-label small" for="{{ recovery_form.returned_by_name.id_for_label }}">Returning Officer / Custodian *</label>
+                            {{ recovery_form.returned_by_name }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small" for="{{ recovery_form.verification_summary.id_for_label }}">Verification Summary *</label>
+                            {{ recovery_form.verification_summary }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small" for="{{ recovery_form.notes.id_for_label }}">Closing Remarks (Optional)</label>
+                            {{ recovery_form.notes }}
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 fw-bold">
+                            <i class="bi bi-check-all me-1"></i> Confirm Physical Hand-over & Complete Recovery
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="p-3 rounded-3 bg-success bg-opacity-10 border border-success text-success small">
+                        <i class="bi bi-check-circle-fill me-1"></i>
+                        Recovery finalized and recorded. Item has been released to {{ claim.claimant.username }}.
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Account Profile | Campus Recovery Portal{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="saas-card p-4 p-md-5">
+                <div class="d-flex align-items-center gap-3 mb-4 border-bottom border-secondary pb-3">
+                    <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary fs-3">
+                        <i class="bi bi-person-gear"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-white fw-bold mb-0">My Campus Profile</h3>
+                        <p class="text-secondary small mb-0">{{ user.email }} &bull; Role: <span class="badge bg-secondary">{{ user.get_role_display }}</span></p>
+                    </div>
+                </div>
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="{{ form.first_name.id_for_label }}">First Name</label>
+                            {{ form.first_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="{{ form.last_name.id_for_label }}">Last Name</label>
+                            {{ form.last_name }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ form.student_id.id_for_label }}">Roll / ID Number</label>
+                            {{ form.student_id }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ form.phone_number.id_for_label }}">Phone Number</label>
+                            {{ form.phone_number }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="{{ form.department.id_for_label }}">Department</label>
+                            {{ form.department }}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label" for="{{ form.avatar.id_for_label }}">Profile Avatar (Optional)</label>
+                        {{ form.avatar }}
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'accounts:dashboard' %}" class="btn btn-secondary btn-sm">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">Save Profile Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

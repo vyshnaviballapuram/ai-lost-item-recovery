@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Operations Console | Campus Recovery Admin{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+    <!-- Persistent Admin Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="d-flex align-items-center gap-2 px-2 py-3 mb-2 border-bottom border-secondary">
+            <span class="p-2 rounded bg-danger bg-opacity-25 text-danger fs-5">
+                <i class="bi bi-shield-shaded"></i>
+            </span>
+            <div>
+                <div class="text-white fw-bold small">Campus Admin Desk</div>
+                <div class="text-muted" style="font-size: 0.7rem;">Staff Operations Console</div>
+            </div>
+        </div>
+
+        <nav class="flex-grow-1">
+            <div class="text-uppercase text-muted fw-bold px-3 py-2" style="font-size: 0.65rem; letter-spacing: 0.05em;">Analytics & Controls</div>
+            <a href="{% url 'dashboard:overview' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'overview' %}active{% endif %}">
+                <span class="admin-nav-link-content">
+                    <i class="bi bi-speedometer2"></i> Dashboard Overview
+                </span>
+            </a>
+
+            <div class="text-uppercase text-muted fw-bold px-3 py-2 mt-2" style="font-size: 0.65rem; letter-spacing: 0.05em;">Verification Queues</div>
+            <a href="{% url 'dashboard:approvals' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'approvals' or request.resolver_match.url_name == 'report_inspect' %}active{% endif %}">
+                <span class="admin-nav-link-content">
+                    <i class="bi bi-inbox-fill"></i> Approval Queue
+                </span>
+            </a>
+
+            <a href="{% url 'dashboard:matches_list' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'matches_list' %}active{% endif %}">
+                <span class="admin-nav-link-content">
+                    <i class="bi bi-cpu-fill text-info"></i> AI Match Review
+                </span>
+            </a>
+
+            <a href="{% url 'dashboard:claims_list' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'claims_list' or request.resolver_match.url_name == 'claim_inspect' %}active{% endif %}">
+                <span class="admin-nav-link-content">
+                    <i class="bi bi-award-fill text-warning"></i> Ownership Claims
+                </span>
+            </a>
+
+            <a href="{% url 'dashboard:recoveries_list' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'recoveries_list' %}active{% endif %}">
+                <span class="admin-nav-link-content">
+                    <i class="bi bi-check-circle-fill text-success"></i> Verified Recoveries
+                </span>
+            </a>
+
+            <div class="text-uppercase text-muted fw-bold px-3 py-2 mt-2" style="font-size: 0.65rem; letter-spacing: 0.05em;">Compliance & Logs</div>
+            <a href="{% url 'dashboard:contact_logs' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'contact_logs' %}active{% endif %}">
+                <span class="admin-nav-link-content">
+                    <i class="bi bi-telephone-outbound"></i> Student Contact Logs
+                </span>
+            </a>
+
+            <a href="{% url 'dashboard:audit_logs' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'audit_logs' %}active{% endif %}">
+                <span class="admin-nav-link-content">
+                    <i class="bi bi-journal-text"></i> System Audit Trail
+                </span>
+            </a>
+        </nav>
+
+        <div class="border-top border-secondary pt-3 mt-auto">
+            <a href="/technical-admin/" target="_blank" class="admin-nav-item text-secondary small">
+                <span class="admin-nav-link-content">
+                    <i class="bi bi-tools"></i> Django Superuser Admin
+                </span>
+                <i class="bi bi-box-arrow-up-right" style="font-size: 0.75rem;"></i>
+            </a>
+            <a href="{% url 'accounts:dashboard' %}" class="admin-nav-item text-info small">
+                <span class="admin-nav-link-content">
+                    <i class="bi bi-arrow-left"></i> Student Portal View
+                </span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Admin Main Body -->
+    <main class="admin-content">
+        {% block admin_content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}

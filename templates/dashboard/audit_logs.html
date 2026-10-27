@@ -1,0 +1,57 @@
+{% extends 'dashboard/base_admin.html' %}
+{% load static %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="text-white fw-bold mb-1">System Security & Operations Audit Trail</h2>
+        <p class="text-secondary small mb-0">Immutable chronological record of administrative actions, report reviews, and state changes.</p>
+    </div>
+</div>
+
+<div class="saas-card">
+    <div class="saas-card-body p-0">
+        {% if page_obj %}
+            <div class="table-responsive">
+                <table class="saas-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp (UTC)</th>
+                            <th>Actor</th>
+                            <th>Action Type</th>
+                            <th>Target Entity</th>
+                            <th>Operation Details</th>
+                            <th>IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in page_obj %}
+                            <tr>
+                                <td class="text-secondary small font-monospace">{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+                                <td>
+                                    {% if log.actor %}
+                                        <span class="text-white fw-semibold small">{{ log.actor.username }}</span>
+                                    {% else %}
+                                        <span class="text-muted small">System</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary font-monospace" style="font-size: 0.7rem;">{{ log.action_type }}</span>
+                                </td>
+                                <td class="font-monospace text-info small">{{ log.target_model }}:{{ log.target_id }}</td>
+                                <td class="text-secondary small" style="max-width: 320px;">{{ log.details }}</td>
+                                <td class="font-monospace text-muted small">{{ log.ip_address|default:"127.0.0.1" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5 text-secondary">
+                <i class="bi bi-journal-text fs-1 text-muted d-block mb-2"></i>
+                No audit entries recorded.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

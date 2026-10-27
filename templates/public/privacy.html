@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Privacy Policy & Confidential Markings Protection{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="saas-card p-4 p-lg-5">
+                <div class="d-flex align-items-center gap-3 mb-4 border-bottom border-secondary pb-3">
+                    <span class="p-3 rounded-3 bg-warning bg-opacity-10 text-warning fs-3">
+                        <i class="bi bi-shield-lock"></i>
+                    </span>
+                    <div>
+                        <h2 class="text-white fw-bold mb-1">Campus Privacy & Data Protection Policy</h2>
+                        <p class="text-secondary small mb-0">Confidentiality Guarantee for Lost and Found Belongings</p>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h5 class="text-white fw-bold">1. Zero Automatic Publication</h5>
+                    <p class="text-secondary small">
+                        To prevent opportunistic fraud, theft, or stalking, <strong>no report is ever published immediately upon submission</strong>. Every report is stored securely in the database with a <code>PENDING</code> status. Public listings show only administrator-approved reports and strip confidential markings.
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <h5 class="text-white fw-bold">2. Protection of Distinctive Marks & Identifiers</h5>
+                    <p class="text-secondary small">
+                        When submitting a report, fields such as <strong>serial numbers, unique scratches, internal contents, lock screen patterns, and engraving</strong> are marked as strictly confidential. These values are never visible in public listings and are accessible only to verified campus security officers to evaluate ownership claims.
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <h5 class="text-white fw-bold">3. Contact Information Privacy</h5>
+                    <p class="text-secondary small">
+                        Students' personal phone numbers and private email addresses are never displayed publicly. Authorized administrators contact reporters directly through verified channels, and contact logs are audited to maintain student safety.
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <h5 class="text-white fw-bold">4. AI Match Suggestions Privacy</h5>
+                    <p class="text-secondary small">
+                        AI-generated potential matches are treated as confidential operational intelligence. Ordinary users cannot see matches involving unapproved reports.
+                    </p>
+                </div>
+
+                <div class="border-top border-secondary pt-3 mt-4 text-center">
+                    <a href="{% url 'public_home' %}" class="btn btn-secondary btn-sm px-4">Back to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

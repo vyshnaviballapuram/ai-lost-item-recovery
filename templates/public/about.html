@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}System Architecture & ML Specifications{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="mb-4 text-center">
+                <span class="badge bg-primary text-uppercase px-3 py-1 mb-2">Technical Documentation</span>
+                <h1 class="text-white fw-bold">AI-Based Campus Lost-Item Recovery System</h1>
+                <p class="text-secondary">Engineering Specifications, Algorithm Design & Administrative Verification Logic</p>
+            </div>
+
+            <div class="saas-card mb-4 p-4">
+                <h4 class="text-white fw-bold mb-3"><i class="bi bi-cpu text-primary me-2"></i> 1. AI Matching Engine Architecture</h4>
+                <p class="text-secondary">
+                    The AI matching engine is implemented in a dedicated modular service (<code>items/services/ai_matching.py</code>). Unlike traditional simple text search engines, it utilizes a composite, multi-factor scoring function:
+                </p>
+
+                <div class="table-responsive my-3">
+                    <table class="saas-table">
+                        <thead>
+                            <tr>
+                                <th>Feature Component</th>
+                                <th>Weight</th>
+                                <th>Evaluation Method</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-white fw-semibold">Textual Similarity</td>
+                                <td><span class="badge bg-primary">45%</span></td>
+                                <td>TF-IDF & Cosine Similarity</td>
+                                <td>Evaluates n-grams across combined titles and descriptions using Scikit-Learn vectorization.</td>
+                            </tr>
+                            <tr>
+                                <td class="text-white fw-semibold">Category Hierarchy</td>
+                                <td><span class="badge bg-info">20%</span></td>
+                                <td>Hierarchical Classification</td>
+                                <td>Matches primary category, subcategory tokens, and device classifications.</td>
+                            </tr>
+                            <tr>
+                                <td class="text-white fw-semibold">Distinctive Attributes</td>
+                                <td><span class="badge bg-warning text-dark">15%</span></td>
+                                <td>Token Overlap & Penalty Filter</td>
+                                <td>Detects matching brands, color descriptors, and private sticker identifiers while penalizing contradictory colors.</td>
+                            </tr>
+                            <tr>
+                                <td class="text-white fw-semibold">Campus Location</td>
+                                <td><span class="badge bg-secondary">10%</span></td>
+                                <td>Landmark & Zone Proximity</td>
+                                <td>Correlates buildings, campus reading zones, library wings, and dining halls.</td>
+                            </tr>
+                            <tr>
+                                <td class="text-white fw-semibold">Temporal Timeline</td>
+                                <td><span class="badge bg-success">10%</span></td>
+                                <td>Chronological Coherence</td>
+                                <td>Verifies chronological coherence: lost date must realistically precede or align with found date.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="confidential-callout mt-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    <strong>Similarity Score Notice:</strong> The score represents a normalized similarity metric (0 to 100), not an automated determination of legal ownership. Final recovery always requires human administrative verification.
+                </div>
+            </div>
+
+            <div class="saas-card mb-4 p-4">
+                <h4 class="text-white fw-bold mb-3"><i class="bi bi-shield-check text-success me-2"></i> 2. Administrative Approval & Verification Workflow</h4>
+                <p class="text-secondary">
+                    Our architecture enforces a rigorous, state-machine driven approval process:
+                </p>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 bg-dark border border-secondary h-100">
+                            <h6 class="text-warning fw-bold"><i class="bi bi-hourglass-split me-1"></i> PENDING</h6>
+                            <p class="text-secondary small mb-0">Initial state for all user reports. Completely hidden from public catalog and external queries.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 bg-dark border border-secondary h-100">
+                            <h6 class="text-info fw-bold"><i class="bi bi-question-circle me-1"></i> NEEDS_INFORMATION</h6>
+                            <p class="text-secondary small mb-0">Admin contacts student requesting clarification on identifiers or specific location markers.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 bg-dark border border-secondary h-100">
+                            <h6 class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i> APPROVED</h6>
+                            <p class="text-secondary small mb-0">Verified by campus staff. Only at this point is the report eligible for sanitized public listing.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 bg-dark border border-secondary h-100">
+                            <h6 class="text-danger fw-bold"><i class="bi bi-x-circle me-1"></i> REJECTED / ARCHIVED</h6>
+                            <p class="text-secondary small mb-0">Deactivates all recovery suggestions and keeps report hidden without deleting database audit history.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="saas-card p-4">
+                <h4 class="text-white fw-bold mb-3"><i class="bi bi-server text-info me-2"></i> 3. Security & Engineering Best Practices</h4>
+                <ul class="text-secondary small mb-0">
+                    <li class="mb-2"><strong>IDOR Protection:</strong> Users can never access other students' pending or unapproved reports by tampering with URL parameters or report IDs.</li>
+                    <li class="mb-2"><strong>CSRF & Authentication:</strong> Strict CSRF validation on all POST actions; session security cookies; rate-limited logins.</li>
+                    <li class="mb-2"><strong>Database Constraints:</strong> Unique constraint prevents duplicate match-pairs <code>(lost_report, found_report)</code>.</li>
+                    <li class="mb-2"><strong>Dual Interface Separation:</strong> Technical Django Admin is isolated for database administrators, while staff use a modern SaaS Operations Console.</li>
+                    <li><strong>Deployment Ready:</strong> Pre-configured with WhiteNoise, PostgreSQL <code>dj-database-url</code>, and Gunicorn for 1-click deployment on Render.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

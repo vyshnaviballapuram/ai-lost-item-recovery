@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Approved Public Listings | Campus Recovery Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-success text-uppercase">Verified Listings</span>
+                <h2 class="text-white fw-bold mb-0">Approved Public Items</h2>
+            </div>
+            <p class="text-secondary small mb-0">
+                Verified campus belongings approved by administration. Confidential identifiers are kept private to protect legitimate ownership.
+            </p>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a href="{% url 'items:report_lost' %}" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-search me-1"></i> Report Lost Item
+            </a>
+            <a href="{% url 'items:report_found' %}" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-hand-thumbs-up me-1"></i> Report Found Item
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="saas-card p-3 mb-4">
+        <form method="get" class="row g-2 align-items-center">
+            <!-- Type Tabs -->
+            <div class="col-md-3">
+                <div class="btn-group w-100" role="group">
+                    <a href="?type=ALL{% if current_category %}&category={{ current_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="btn btn-sm {% if current_type == 'ALL' %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+                    <a href="?type=LOST{% if current_category %}&category={{ current_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="btn btn-sm {% if current_type == 'LOST' %}btn-danger{% else %}btn-secondary{% endif %}">Lost</a>
+                    <a href="?type=FOUND{% if current_category %}&category={{ current_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="btn btn-sm {% if current_type == 'FOUND' %}btn-success{% else %}btn-secondary{% endif %}">Found</a>
+                </div>
+            </div>
+
+            <!-- Category Selector -->
+            <div class="col-md-3">
+                <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.slug }}" {% if current_category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Search Field -->
+            <div class="col-md-4">
+                <div class="input-group input-group-sm">
+                    <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by title, location or keywords...">
+                    {% if current_type != 'ALL' %}
+                        <input type="hidden" name="type" value="{{ current_type }}">
+                    {% endif %}
+                    <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+                </div>
+            </div>
+
+            <!-- Reset -->
+            <div class="col-md-2 text-end">
+                <a href="{% url 'items:public_list' %}" class="btn btn-secondary btn-sm w-100">Reset Filters</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Listings Grid -->
+    {% if page_obj %}
+        <div class="row g-4 mb-4">
+            {% for report in page_obj %}
+                <div class="col-md-6 col-lg-4 col-xl-3">
+                    <div class="saas-card h-100 d-flex flex-column">
+                        <div class="position-relative" style="height: 180px; background-color: #0F172A; overflow: hidden; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem;">
+                            {% if report.primary_image %}
+                                <img src="{{ report.primary_image.image.url }}" alt="{{ report.title }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                                <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                                    <i class="bi {{ report.category.icon }} fs-1"></i>
+                                </div>
+                            {% endif %}
+                            <div class="position-absolute top-0 start-0 m-2">
+                                <span class="badge badge-status {% if report.report_type == 'LOST' %}badge-type-lost{% else %}badge-type-found{% endif %}">
+                                    {{ report.get_report_type_display }}
+                                </span>
+                            </div>
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <span class="badge bg-dark bg-opacity-75 text-info border border-secondary" style="font-size: 0.7rem;">
+                                    {{ report.category.name }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 d-flex flex-column flex-grow-1">
+                            <h6 class="text-white fw-bold mb-1">{{ report.title }}</h6>
+                            <div class="text-secondary small mb-2">
+                                <i class="bi bi-geo-alt text-primary me-1"></i> {{ report.location_name }}
+                            </div>
+
+                            <p class="text-secondary small flex-grow-1 mb-3">
+                                {{ report.description|truncatewords:14 }}
+                            </p>
+
+                            <div class="border-top border-secondary pt-2 mt-auto d-flex justify-content-between text-secondary small">
+                                <span><i class="bi bi-calendar3 me-1"></i> {{ report.date_occurred|date:"M d, Y" }}</span>
+                                <span class="font-monospace text-muted">{{ report.report_id }}</span>
+                            </div>
+
+                            <div class="pt-3">
+                                <a href="{% url 'items:report_detail' report.report_id %}" class="btn btn-secondary btn-sm w-100">
+                                    {% if report.report_type == 'FOUND' %}Inspect / Claim Ownership{% else %}Inspect Details{% endif %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link bg-dark border-secondary text-white" href="?page={{ page_obj.previous_page_number }}{% if current_type != 'ALL' %}&type={{ current_type }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item disabled">
+                        <span class="page-link bg-dark border-secondary text-secondary">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link bg-dark border-secondary text-white" href="?page={{ page_obj.next_page_number }}{% if current_type != 'ALL' %}&type={{ current_type }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="saas-card text-center py-5">
+            <i class="bi bi-search fs-1 text-muted d-block mb-2"></i>
+            <h5 class="text-white">No Approved Items Found</h5>
+            <p class="text-secondary small mb-3">No public items match the selected filter criteria.</p>
+            <a href="{% url 'items:public_list' %}" class="btn btn-secondary btn-sm">Clear All Filters</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

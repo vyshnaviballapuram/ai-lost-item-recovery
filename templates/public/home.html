@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Campus Lost-Item Recovery Portal | AI Matching Engine{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="py-5 text-white" style="background: radial-gradient(circle at 50% 20%, rgba(14, 165, 233, 0.12) 0%, rgba(11, 15, 25, 0) 70%);">
+    <div class="container py-lg-4 text-center">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-dark border border-secondary mb-3">
+            <span class="badge bg-primary px-2 py-1" style="font-size: 0.7rem;">PROPRIETARY AI ENGINE</span>
+            <span class="text-secondary small">Scikit-Learn TF-IDF &bull; Multi-Attribute Matching &bull; Zero Public Leaks</span>
+        </div>
+        <h1 class="display-4 fw-extrabold mb-3 text-white">
+            Campus Lost & Found, <br><span class="text-primary">Secured by Intelligence.</span>
+        </h1>
+        <p class="lead text-secondary mx-auto mb-4" style="max-width: 720px;">
+            A centralized recovery system engineered to protect student privacy. Reports undergo AI similarity analysis and mandatory administrator verification before any public exposure.
+        </p>
+
+        <div class="d-flex flex-wrap justify-content-center gap-3 mb-5">
+            <a href="{% url 'items:report_lost' %}" class="btn btn-danger btn-lg px-4 py-3 fw-semibold shadow-sm">
+                <i class="bi bi-search me-2"></i> Report Lost Belonging
+            </a>
+            <a href="{% url 'items:report_found' %}" class="btn btn-success btn-lg px-4 py-3 fw-semibold shadow-sm">
+                <i class="bi bi-hand-thumbs-up me-2"></i> Report Found Belonging
+            </a>
+            <a href="{% url 'items:public_list' %}" class="btn btn-secondary btn-lg px-4 py-3 fw-semibold">
+                <i class="bi bi-grid me-2"></i> Browse Approved Items
+            </a>
+        </div>
+
+        <!-- Live Database Metric Counters -->
+        <div class="row g-3 justify-content-center" style="max-width: 900px; margin: 0 auto;">
+            <div class="col-6 col-md-3">
+                <div class="stat-widget text-start">
+                    <div>
+                        <div class="stat-widget-number text-primary">{{ total_approved }}</div>
+                        <div class="stat-widget-label">Verified Listings</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-widget text-start">
+                    <div>
+                        <div class="stat-widget-number text-success">{{ total_recovered }}</div>
+                        <div class="stat-widget-label">Items Recovered</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-widget text-start">
+                    <div>
+                        <div class="stat-widget-number text-info">{{ total_matches_evaluated }}</div>
+                        <div class="stat-widget-label">AI Matches Evaluated</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-widget text-start">
+                    <div>
+                        <div class="stat-widget-number text-warning">{{ categories.count }}</div>
+                        <div class="stat-widget-label">Active Categories</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Strict Privacy Banner -->
+<section class="container py-3">
+    <div class="p-4 rounded-3 border border-secondary" style="background-color: rgba(30, 41, 59, 0.4);">
+        <div class="row align-items-center g-3">
+            <div class="col-md-auto text-warning fs-1 text-center">
+                <i class="bi bi-shield-lock"></i>
+            </div>
+            <div class="col">
+                <h5 class="text-white mb-1 fw-bold">Built on Guaranteed Privacy & Administrative Verification</h5>
+                <p class="text-secondary small mb-0">
+                    <strong>Critical Security Protocol:</strong> Submitted reports are <em>never published automatically</em> to the public. Each submission enters a private <span class="badge bg-warning text-dark">PENDING</span> state, where the AI matching engine evaluates compatibility, and campus staff physically verify evidence with students before releasing information.
+                </p>
+            </div>
+            <div class="col-md-auto text-end">
+                <a href="{% url 'public_privacy' %}" class="btn btn-outline-info btn-sm">Read Privacy Policy</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h6 class="text-primary text-uppercase fw-bold letter-spacing-1">Controlled Workflow</h6>
+            <h2 class="text-white fw-bold">How the Recovery System Works</h2>
+            <p class="text-secondary small">Four stages ensure seamless, fraud-resistant campus recoveries.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="saas-card h-100 p-4">
+                    <div class="d-inline-flex p-3 rounded-3 bg-primary bg-opacity-10 text-primary fs-3 mb-3">
+                        <i class="bi bi-file-earmark-lock"></i>
+                    </div>
+                    <div class="text-muted small fw-bold mb-1">STAGE 01</div>
+                    <h5 class="text-white fw-bold mb-2">1. Private Submission</h5>
+                    <p class="text-secondary small mb-0">
+                        Student submits a report privately. Details like serial numbers, distinctive marks, and phone numbers are stored confidentially.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="saas-card h-100 p-4">
+                    <div class="d-inline-flex p-3 rounded-3 bg-info bg-opacity-10 text-info fs-3 mb-3">
+                        <i class="bi bi-cpu"></i>
+                    </div>
+                    <div class="text-muted small fw-bold mb-1">STAGE 02</div>
+                    <h5 class="text-white fw-bold mb-2">2. AI Matching Engine</h5>
+                    <p class="text-secondary small mb-0">
+                        Modular Scikit-Learn TF-IDF vectors evaluate textual similarity, category compatibility, brand tokens, and campus location proximity.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="saas-card h-100 p-4">
+                    <div class="d-inline-flex p-3 rounded-3 bg-warning bg-opacity-10 text-warning fs-3 mb-3">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <div class="text-muted small fw-bold mb-1">STAGE 03</div>
+                    <h5 class="text-white fw-bold mb-2">3. Admin Verification</h5>
+                    <p class="text-secondary small mb-0">
+                        Campus officers inspect suggested matches, conduct secure student contact attempts, and approve or request additional evidence.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="saas-card h-100 p-4">
+                    <div class="d-inline-flex p-3 rounded-3 bg-success bg-opacity-10 text-success fs-3 mb-3">
+                        <i class="bi bi-check2-circle"></i>
+                    </div>
+                    <div class="text-muted small fw-bold mb-1">STAGE 04</div>
+                    <h5 class="text-white fw-bold mb-2">4. Verified Hand-off</h5>
+                    <p class="text-secondary small mb-0">
+                        Owner inspects the physical item at the Campus Help Desk, verifies lock screen/credentials, and an immutable recovery record is created.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Approved Public Reports Preview -->
+<section class="py-5 bg-dark bg-opacity-50 border-top border-bottom border-secondary">
+    <div class="container">
+        <div class="d-flex flex-wrap justify-content-between align-items-end mb-4">
+            <div>
+                <h6 class="text-success text-uppercase fw-bold">Live Public Catalog</h6>
+                <h2 class="text-white fw-bold mb-1">Approved Public Items</h2>
+                <p class="text-secondary small mb-0">Only verified reports approved by campus administration are shown below.</p>
+            </div>
+            <a href="{% url 'items:public_list' %}" class="btn btn-outline-primary btn-sm">
+                View All Approved Items <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+
+        {% if recent_approved %}
+            <div class="row g-4">
+                {% for report in recent_approved %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="saas-card h-100 d-flex flex-column">
+                            <div class="position-relative" style="height: 180px; background-color: #0F172A; overflow: hidden; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem;">
+                                {% if report.primary_image %}
+                                    <img src="{{ report.primary_image.image.url }}" alt="{{ report.title }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                {% else %}
+                                    <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                                        <i class="bi {{ report.category.icon }} fs-1"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="position-absolute top-0 start-0 m-3">
+                                    <span class="badge badge-status {% if report.report_type == 'LOST' %}badge-type-lost{% else %}badge-type-found{% endif %}">
+                                        {{ report.get_report_type_display }}
+                                    </span>
+                                </div>
+                                <div class="position-absolute top-0 end-0 m-3">
+                                    <span class="badge bg-dark bg-opacity-75 text-info border border-secondary">
+                                        {{ report.category.name }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="p-3 d-flex flex-column flex-grow-1">
+                                <h6 class="text-white fw-bold mb-2">{{ report.title }}</h6>
+                                <p class="text-secondary small flex-grow-1 mb-3">
+                                    {{ report.description|truncatewords:16 }}
+                                </p>
+
+                                <div class="border-top border-secondary pt-2 mt-auto text-secondary small">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span><i class="bi bi-geo-alt me-1 text-primary"></i> {{ report.location_name }}</span>
+                                        <span><i class="bi bi-calendar3 me-1 text-info"></i> {{ report.date_occurred|date:"M d, Y" }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="pt-3">
+                                    <a href="{% url 'items:report_detail' report.report_id %}" class="btn btn-secondary btn-sm w-100">
+                                        Inspect Item Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5 saas-card">
+                <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+                <h5 class="text-white">No Public Items Currently Listed</h5>
+                <p class="text-secondary small mb-0">Newly submitted items are currently going through administrative verification.</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

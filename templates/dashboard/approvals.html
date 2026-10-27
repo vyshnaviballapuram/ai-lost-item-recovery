@@ -1,0 +1,167 @@
+{% extends 'dashboard/base_admin.html' %}
+{% load static %}
+
+{% block admin_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h2 class="text-white fw-bold mb-1">Report Approval Queue</h2>
+        <p class="text-secondary small mb-0">Inspect incoming lost and found submissions, evaluate AI recommendations, and approve or reject.</p>
+    </div>
+    <span class="badge bg-secondary px-3 py-2 fs-7">{{ total_count }} Reports in Queue</span>
+</div>
+
+<!-- Filters Toolbar -->
+<div class="saas-card p-3 mb-4">
+    <form method="get" class="row g-2 align-items-center">
+        <!-- Status Filter -->
+        <div class="col-md-3">
+            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="ALL" {% if status_filter == 'ALL' %}selected{% endif %}>All Approval Statuses</option>
+                <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pending Review</option>
+                <option value="NEEDS_INFORMATION" {% if status_filter == 'NEEDS_INFORMATION' %}selected{% endif %}>Needs Information</option>
+                <option value="APPROVED" {% if status_filter == 'APPROVED' %}selected{% endif %}>Approved (Public)</option>
+                <option value="REJECTED" {% if status_filter == 'REJECTED' %}selected{% endif %}>Rejected</option>
+                <option value="ARCHIVED" {% if status_filter == 'ARCHIVED' %}selected{% endif %}>Archived</option>
+            </select>
+        </div>
+
+        <!-- Type Filter -->
+        <div class="col-md-2">
+            <select name="type" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="ALL" {% if type_filter == 'ALL' %}selected{% endif %}>All Types</option>
+                <option value="LOST" {% if type_filter == 'LOST' %}selected{% endif %}>Lost Items</option>
+                <option value="FOUND" {% if type_filter == 'FOUND' %}selected{% endif %}>Found Items</option>
+            </select>
+        </div>
+
+        <!-- Category Filter -->
+        <div class="col-md-3">
+            <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if category_filter == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Search Field -->
+        <div class="col-md-3">
+            <div class="input-group input-group-sm">
+                <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search ID, title, student...">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+            </div>
+        </div>
+
+        <!-- Reset Button -->
+        <div class="col-md-1 text-end">
+            <a href="{% url 'dashboard:approvals' %}" class="btn btn-secondary btn-sm w-100" title="Reset Filters"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Reports Table -->
+<div class="saas-card">
+    <div class="saas-card-body p-0">
+        {% if page_obj %}
+            <div class="table-responsive">
+                <table class="saas-table">
+                    <thead>
+                        <tr>
+                            <th>Photo</th>
+                            <th>Report ID</th>
+                            <th>Item Title & Category</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Reporter</th>
+                            <th>Date Occurred</th>
+                            <th>AI State</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in page_obj %}
+                            <tr>
+                                <td style="width: 50px;">
+                                    <div class="rounded overflow-hidden bg-dark d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border: 1px solid #334155;">
+                                        {% if report.primary_image %}
+                                            <img src="{{ report.primary_image.image.url }}" alt="Thumb" style="width: 100%; height: 100%; object-fit: cover;">
+                                        {% else %}
+                                            <i class="bi {{ report.category.icon }} text-muted"></i>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="font-monospace text-primary fw-semibold small">{{ report.report_id }}</span>
+                                </td>
+                                <td>
+                                    <div class="text-white fw-semibold small">{{ report.title }}</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">
+                                        {{ report.category.name }} &bull; {{ report.location_name }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-status {% if report.report_type == 'LOST' %}badge-type-lost{% else %}badge-type-found{% endif %}">
+                                        {{ report.get_report_type_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-status {% if report.approval_status == 'APPROVED' %}badge-approved{% elif report.approval_status == 'PENDING' %}badge-pending{% elif report.approval_status == 'NEEDS_INFORMATION' %}badge-needs-info{% elif report.approval_status == 'REJECTED' %}badge-rejected{% else %}badge-archived{% endif %}">
+                                        {{ report.get_approval_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="text-white small">{{ report.reporter.username }}</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">{{ report.reporter.student_id|default:report.reporter.email }}</div>
+                                </td>
+                                <td class="text-secondary small">{{ report.date_occurred|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if report.ai_processed %}
+                                        <span class="badge bg-success bg-opacity-25 text-success border border-success" style="font-size: 0.65rem;">
+                                            <i class="bi bi-check me-1"></i> EVALUATED
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary" style="font-size: 0.65rem;">PENDING AI</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'dashboard:report_inspect' report.report_id %}" class="btn btn-primary btn-sm py-1 px-3 fw-semibold" style="font-size: 0.8rem;">
+                                        Inspect & Review
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+                <div class="p-3 border-top border-secondary">
+                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link bg-dark border-secondary text-white" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">Prev</a>
+                            </li>
+                        {% endif %}
+                        <li class="page-item disabled">
+                            <span class="page-link bg-dark border-secondary text-secondary">
+                                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link bg-dark border-secondary text-white" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5 text-secondary">
+                <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                No reports found matching the selected queue filters.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

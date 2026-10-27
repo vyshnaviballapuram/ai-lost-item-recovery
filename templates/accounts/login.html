@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sign In | Campus Recovery Portal{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="saas-card p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-3">
+                        <i class="bi bi-person-lock fs-2"></i>
+                    </div>
+                    <h3 class="text-white fw-bold mb-1">Campus Sign In</h3>
+                    <p class="text-secondary small">Access your reported items, track claims & receive alerts</p>
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger small py-2 mb-3">
+                            {% for error in form.non_field_errors %}
+                                <div><i class="bi bi-exclamation-circle me-1"></i> {{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ form.username.id_for_label }}">Username or Roll No</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label" for="{{ form.password.id_for_label }}">Password</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold mb-3">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Sign In to Portal
+                    </button>
+
+                    <div class="text-center text-secondary small">
+                        Don't have an account yet? <a href="{% url 'accounts:register' %}" class="fw-semibold">Register here</a>
+                    </div>
+                </form>
+
+                <div class="border-top border-secondary pt-3 mt-4 text-center">
+                    <span class="text-muted small">Demo accounts: <code>admin</code> / <code>admin12345</code> or <code>arjun_patel</code> / <code>student12345</code></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

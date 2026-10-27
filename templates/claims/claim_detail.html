@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Claim [{{ claim.claim_id }}] | Campus Recovery Portal{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header Card -->
+            <div class="saas-card p-4 mb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge badge-status {% if claim.status == 'VERIFIED' %}badge-approved{% elif claim.status == 'COMPLETED' %}badge-archived{% elif claim.status == 'PENDING_REVIEW' %}badge-pending{% elif claim.status == 'NEEDS_INFORMATION' %}badge-needs-info{% else %}badge-rejected{% endif %}">
+                                {{ claim.get_status_display }}
+                            </span>
+                            <span class="font-monospace text-secondary small">Claim ID: {{ claim.claim_id }}</span>
+                        </div>
+                        <h3 class="text-white fw-bold mb-1">Claim for {{ claim.item_report.title }}</h3>
+                        <p class="text-secondary small mb-0">Filed on {{ claim.created_at|date:"F d, Y h:i A" }} by {{ claim.claimant.username }}</p>
+                    </div>
+
+                    {% if is_staff %}
+                        <a href="{% url 'dashboard:claim_inspect' claim.claim_id %}" class="btn btn-warning btn-sm fw-bold">
+                            <i class="bi bi-sliders me-1"></i> Admin Verification Console
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Claim Evidence Details -->
+            <div class="saas-card p-4 mb-4">
+                <h5 class="text-white fw-bold mb-3"><i class="bi bi-file-earmark-lock me-2 text-primary"></i> Submitted Ownership Proof</h5>
+                
+                <div class="p-3 rounded-3 bg-dark border border-secondary mb-3">
+                    <div class="text-muted small mb-1">Evidence Description Provided by Claimant:</div>
+                    <div class="text-white" style="white-space: pre-line;">{{ claim.evidence_description }}</div>
+                </div>
+
+                {% if claim.proof_file %}
+                    <div class="mb-3">
+                        <div class="text-muted small mb-1">Attached Document / Proof:</div>
+                        <a href="{{ claim.proof_file.url }}" target="_blank" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-paperclip me-1"></i> View Uploaded Proof Document
+                        </a>
+                    </div>
+                {% endif %}
+
+                <div class="row g-3 border-top border-secondary pt-3 text-secondary small">
+                    <div class="col-sm-6">
+                        <strong>Contact Phone:</strong> {{ claim.contact_phone }}
+                    </div>
+                    <div class="col-sm-6">
+                        <strong>Contact Email:</strong> {{ claim.contact_email }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Decision / Notes -->
+            <div class="saas-card p-4 mb-4">
+                <h5 class="text-white fw-bold mb-3"><i class="bi bi-clipboard-check me-2 text-success"></i> Verification Outcome</h5>
+                
+                <div class="mb-3">
+                    <div class="text-muted small">Current Status</div>
+                    <span class="badge badge-status {% if claim.status == 'VERIFIED' %}badge-approved{% elif claim.status == 'COMPLETED' %}badge-archived{% elif claim.status == 'PENDING_REVIEW' %}badge-pending{% elif claim.status == 'NEEDS_INFORMATION' %}badge-needs-info{% else %}badge-rejected{% endif %} mt-1">
+                        {{ claim.get_status_display }}
+                    </span>
+                </div>
+
+                {% if claim.admin_notes %}
+                    <div class="p-3 rounded-3 bg-dark border border-secondary mb-3">
+                        <div class="text-muted small mb-1">Administrator Rationale & Notes:</div>
+                        <div class="text-white small" style="white-space: pre-line;">{{ claim.admin_notes }}</div>
+                    </div>
+                {% endif %}
+
+                {% if claim.status == 'VERIFIED' %}
+                    <div class="p-3 rounded-3 bg-success bg-opacity-10 border border-success text-success small">
+                        <i class="bi bi-check-circle-fill me-1"></i>
+                        <strong>Ownership Confirmed!</strong> Please visit the Campus Security Desk (Admin Block Room 104) with your student ID to complete physical retrieval.
+                    </div>
+                {% elif claim.status == 'COMPLETED' %}
+                    <div class="p-3 rounded-3 bg-primary bg-opacity-10 border border-primary text-info small">
+                        <i class="bi bi-trophy-fill me-1"></i>
+                        <strong>Recovery Completed:</strong> This item has been verified and released to its rightful owner.
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="text-center">
+                <a href="{% url 'accounts:dashboard' %}" class="btn btn-secondary btn-sm px-4">Return to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
